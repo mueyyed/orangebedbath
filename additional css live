@@ -1,0 +1,183 @@
+
+
+
+/*checkout page coupon button*/
+.form-row.form-row-last .button[name="apply_coupon"][value="استخدام القسيمة"] {
+    background-color: #f5f5f5;
+		color:grey
+}
+
+
+/*- update shopping cart price--*/
+
+
+button[name="update_cart"][value="تحديث السلة"]:enabled {
+    background-color: #ff5001;
+		color:white;
+}
+
+button[ name="apply_coupon"][value="استخدام القسيمة"]:enabled{
+			background-color: var(--btn-default-bgcolor);
+			color:black;
+			opacity:0.5;
+}
+
+button[ name="apply_coupon"][value="استخدام القسيمة"]:disabled{
+			background-color: red;
+			color:black;
+			opacity:0.5;
+}
+
+
+/**** font-family orangered***/
+.woocommerce-tabs.wc-tabs-wrapper,
+.wc_payment_methods , .another-pages , body.rtl, .rtl p, .rtl h1, .rtl h2, .rtl h3, .rtl h4, .rtl h5, .rtl h6, .rtl a, .rtl .wd-tools-text, .rtl .menu-open-label, .rtl .s, .rtl .topbar-text, .rtl .topbar-left-text, .rtl .title-wrapper.text-center, .rtl .tab-label, .rtl .share-title, .rtl .button, .rtl button, .rtl .woocommerce-breadcrumb, .rtl .comment-respond, .rtl .woodmart-shop-tools, .rtl .entry-header, .rtl .suggestion-title, .rtl .woocommerce-info, .rtl .payment_method_hyperpay, .rtl table th, .rtl .yith_wcmc_subscribe_me_label, .rtl .woocommerce-form__label-for-checkbox, .rtl #mc_embed_signup input.email, .rtl .woodmart-checkout-steps ul li, .rtl .single-post-navigation .post-title, .rtl address, .rtl em, .rtl legend, .rtl div.nsl-container .nsl-button-default div.nsl-button-label-container, .rtl .woocommerce-Reviews .comment-reply-title, .rtl .br_alabel span {
+  font-family: 'TempSolution',sans-serif !important;
+}
+
+
+/* hide social media footer*/
+.elementor-element-1002112 .wd-social-icons {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .wd-social-icons {
+        margin-top: 0px;
+        margin-left: 10px;
+    }
+}
+
+/* return form terms font-family*/
+/* Default styling for .ret-form-desc */
+.ret-form-desc {
+    font-family: 'Orange', sans-serif !important;
+    font-style: normal !important;
+    letter-spacing: 0 !important;
+/*     color: red;  */
+}
+
+/* Media query for screens smaller than 768px (typical mobile screens) */
+@media only screen and (max-width: 768px) {
+    /* Adjust the font size or any other styles as needed for smaller screens */
+    .ret-form-desc {
+        font-size: 16px !important; /* Example font size */
+    }
+}
+
+
+
+
+label[for="shipping_method_0_flat_rate29"] {
+    color: white;
+}
+
+
+/*2024.01.16 */
+/* add border in checkout page to country box */
+element.style {
+    /* border: outset; */
+    /* border-block-color: black; */
+    border-style: solid ;
+    border-width: 2px ;
+    border-color: #b3b1b14f !important;
+}
+
+#billing_country_field strong {
+	   width: 100%;
+     display: inline-block;  
+    border: 2px solid #0000001a;
+    font-weight: normal;
+		padding:5px;
+ }
+
+
+/* 2024.01.15*/
+/*adding border to name holder*/
+
+.elementor iframe {
+		border: 1px solid #D3D3D3 !important;
+		    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/*right to left for fields*/
+.wpwl-wrapper  {
+    direction: rtl;
+}
+
+/* assing on height for input placeholder*/
+input[type='tel'] ,input[type='text'] {
+    direction: rtl;
+		height:30px;
+}
+
+
+/* edit load more button in category's pages*/
+
+.btn.wd-load-more.wd-products-load-more.load-on-click {
+    font-weight: bold !important;
+		font-size:13px;
+}
+
+.wd-load-more:not(:hover) {
+    margin-bottom:50px; 
+		border-radius:12px;
+		border-color:black;
+}
+
+/* control search form in menu */
+
+.mobile-nav .searchform input[type="text"] {
+    padding-left: 50px;
+    padding-right: 50px !important;
+    height: 70px;
+    font-weight: 600;
+}
+
+
+/* This will affect mobile devices with a maximum width of 768px */
+
+/* @media screen and (max-width: 768px) {
+    .product-grid-item :is(.product-image-link, .hover-img) img {
+        width: 100%;
+        height: 100px;
+        min-height: 100px;
+        object-fit: yellow;
+    }
+}
+ */
+/* Hide the favorite icon on mobile devices */
+/* @media only screen and (max-width: 767px) {
+    .wd-action-btn > a {
+        display: none;
+    }
+} */
+
+
+/* control swatches number  */
+
+.wd-swatches-grid.wd-size-m .wd-swatch {
+    display: none;
+}
+
+.wd-swatches-grid.wd-size-m .wd-swatch:nth-child(-n+3) {
+    display: block;
+/*     border-bottom: 1px solid orange;
+    background-color: white; */
+} 
+
+/*change padding of mobile phone buttons*/
+/* Media query for mobile devices with a maximum width of 767px */
+@media only screen and (max-width: 767px) {
+    .elementor-button.elementor-slide-button.elementor-size-sm {
+        /* Your mobile-specific padding here */
+        padding: 5px 10px;
+    }
+}
+
+
+
+ 
+
+
+
