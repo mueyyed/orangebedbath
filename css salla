@@ -1,4 +1,107 @@
 
+/*---------------2024.06.06-----12.42----------*/
+
+/* Add custom CSS styles below */ 
+/* display none for lists in footer */
+@media (max-width: 1023px) { /* Adjust the max-width to your desired breakpoint */
+  .container.grid.grid-cols-2.lg\:grid-cols-5.gap-10.lg\:gap-6.grayscale {
+    display: none;
+  }
+}
+
+ /* ------------------ desktop ---------*/
+
+/***********************/
+
+.footer-list {
+  display: flex;
+  flex-wrap: wrap;
+  max-height: 300px;
+  overflow: hidden;
+  margin-left:50px;
+}
+
+.store-links-items {
+  display: flex;
+  flex-direction: column;
+  flex-basis: 50%;
+}
+
+.store-links-items aside {
+  flex-basis: 50%;
+}
+
+.store-links-items a {
+  margin: 5px 0;
+  display: block;
+}
+
+.footer-list.store-links-items{
+width:370px; 
+}
+
+/**************for last menu contact us ******/
+.footer-container {
+  margin-right: 134px;
+  width: max-content;
+}
+
+.footer-title {
+  margin-right: 100px;
+}
+
+.footer-container a {
+  margin-bottom: 10px;
+}
+
+.footer-container a:last-child {
+  margin-bottom: 0; 
+}
+
+.footer-container a:hover {
+  opacity: 0.7;
+}
+
+.contact-icon {
+  margin-right: 100px;
+}
+
+
+/********* old css ******** 2024.03.17**/
+
+ 
+.full-about-block {
+    float: right !important;
+    width:252px;
+}
+
+
+.container.grid.grid-cols-2.lg\:grid-cols-5.gap-10.lg\:gap-6.grayscale {
+  /* background-color: blue; */
+    width:1265px;
+   /*float:left;*/
+    /*margin: 0 auto;*/
+    margin-right:300px;
+    margin-top:-20px;
+    position:relative;
+}
+
+
+/* --- hide default footer on screen media ---*/ 
+/* Hide the div on screens smaller than 768px */
+@media (max-width: 767px) {
+  .footer-list , .container-hide-mobile {
+    display: none;
+  }
+}
+
+ salla-contacts {
+    display: none !important;
+  }
+ 
+
+
+
 
 /*---------------2024.06.06---------------*/
 /* Add custom CSS styles below */ 
