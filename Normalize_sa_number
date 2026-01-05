@@ -1,0 +1,49 @@
+// Normalize and save Saudi phone number for WooCommerce orders
+add_filter( 'woocommerce_checkout_posted_data', function( $data ) {
+
+    // Helper: normalize to +966 format
+    $normalize = function( $input ) {
+        $input = trim( (string) $input );
+        if ( $input === '' ) {
+            return '';
+        }
+
+        // Remove spaces
+        $phone = preg_replace( '/\s+/', '', $input );
+
+        if ( isset( $phone[0] ) && $phone[0] === '+' ) {
+            return $phone;
+        }
+
+        if ( strpos( $phone, '00966' ) === 0 ) {
+            return '+966' . substr( $phone, 5 );
+        }
+
+        if ( strpos( $phone, '966' ) === 0 ) {
+            return '+966' . substr( $phone, 3 );
+        }
+
+        if ( strpos( $phone, '0' ) === 0 ) {
+            return '+966' . substr( $phone, 1 );
+        }
+
+        return '+966' . $phone;
+    };
+
+    // Normalize billing phone
+    if ( ! empty( $data['billing_phone'] ) ) {
+        $data['billing_phone'] = $normalize( $data['billing_phone'] );
+    }
+
+    // Normalize shipping phone (if present)
+    if ( ! empty( $data['shipping_phone'] ) ) {
+        $data['shipping_phone'] = $normalize( $data['shipping_phone'] );
+    }
+
+    // If no shipping phone entered, copy normalized billing phone
+    if ( empty( $data['shipping_phone'] ) && ! empty( $data['billing_phone'] ) ) {
+        $data['shipping_phone'] = $data['billing_phone'];
+    }
+
+    return $data;
+} );
