@@ -1,0 +1,372 @@
+ 
+
+/* Menu SVG Icons */
+.menu-item ._svg img{
+	width: 1em;
+}
+
+
+/*-------------------------------------------*\
+    			Home Page
+\*-------------------------------------------*/
+
+/* Top Bar */
+.wd-header-text strong{
+	font-size:18px;
+}
+@media (max-width: 768px){
+	.whb-top-bar-inner{
+		height: 35px;
+		max-height: 35px;
+		text-align: center;
+	}
+	.wd-header-text strong{
+	font-size:15px;
+	padding:10px 0px;
+	font-weight:700;
+	}
+} 
+.apple-pay-notification{
+	background: #ff5001;
+    color: white;
+    text-align: center;
+    padding: 5px;
+}
+
+/* Search Bar */
+.wd-search-cat{
+  left:auto;
+}
+
+/* Slider */
+#woodmart-main-slider_wrapper{
+  left:auto !important;
+}
+
+/*-------------------------------------------*\
+    			Shop Page
+\*-------------------------------------------*/
+
+/* Product Details */
+.wd-more-desc table th,
+.wd-more-desc table td{
+  border-bottom:none;
+}
+
+/* Product Theme Label */
+.labels-rounded{
+  top:2px;
+  left:2px;
+  right:2px;
+}
+
+/*filter*/
+	.offcanvas-sidebar-mobile .shop-content-area:not(.col-lg-12) .wd-show-sidebar-btn{	margin-right: inherit;}
+
+
+.product-element-top .labels-rounded .out-of-stock,
+.woocommerce-product-gallery .labels-rounded .out-of-stock{
+	word-break:normal;
+	font-family: 'Orange' !important;
+}
+.product-label.new {
+    background-color: #ff3300 !important;
+}
+/* Out of stock Label */
+.out-of-stock{
+	display:none !important;
+}
+
+/*-------------------------------------------*\
+    		Single Product  Page
+\*-------------------------------------------*/
+
+/* Custom label */
+.woocommerce-product-gallery .berocket_better_labels.berocket_better_labels_image{
+	left: 20px!important;
+}
+.woocommerce-product-gallery .berocket_better_labels  .berocket_alabel_id_333384{
+	top: 3px !important;
+}
+
+/* Engraving */
+.fpf-radio-images .woocommerce-input-wrapper label{
+  text-align:center;
+}
+
+.billing_phone{text-align: end;}
+
+
+.fpf-image div{
+  text-align:center;
+  margin-bottom: 20px;
+}
+
+/* Tamara Description */
+.single-product .summary-inner .stock,
+.tamara-product-widget{
+  order:3;
+}
+
+/* Color Swatch */
+.single-product .summary-inner .woodmart-swatch.swatch-on-single, .single-product .summary-inner .wd-swatch.swatch-on-single{
+	padding:0px !important;
+}
+
+/* Meta Description*/
+.product_meta .posted_in{
+  display:none !important;
+}
+.woocommerce-product-details__short-description li::before{
+	content:"" !important;
+}
+.wd-accordion-content ul{
+	padding-right:20px;
+}
+
+/* Upsell and related */
+.related-and-upsells .flickity-button, .wd-btn-arrow{
+	top: 33%;
+}
+
+/* Usually Bought Together */
+.woobt-wrap{
+	background: whitesmoke;
+    border-radius: 10px;
+    padding: 10px;
+	max-width:500px;
+	order:5;
+}
+.woobt-before-text{
+	font-size: 20px;
+    font-weight: bold;
+    color: black;
+    margin-bottom: 0px;
+}
+.woobt-products{
+	display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(150px,1fr));
+}
+@media all and (max-width:768px){
+	.woobt-products{
+		display: flex;
+		overflow-x:scroll;
+	}
+	.woobt-products .woobt-product{
+		min-width:150px;
+	}
+	.woobt-wrap-responsive .woobt-products .woobt-product{
+		padding:5px;
+	}
+	.woobt-wrap-responsive .woobt-products .woobt-product .woobt-thumb img{
+		width:90%;
+	}
+	.woobt-wrap-responsive .woobt-products .woobt-product > div{
+		padding:0px !important;
+	}
+}
+.woobt-products .woobt-product{
+	flex-direction: column;
+    border-bottom:none;
+    border: 1px solid #0000001f;
+    background-color: white;
+	Padding-top:10px;
+	margin:5px;
+	gap:5px;
+	box-shadow: 1px 3px 5px #00000014;
+	justify-content:start;
+}
+.woobt-products .woobt-product .woobt-thumb{
+	width:auto;
+}
+.woobt-choose{
+	position: relative;
+  	display: inline-flex;
+}
+.woobt-products .woobt-product .woobt-title{
+	flex-grow:0;
+}
+.woobt-checkbox {
+  	display: none;
+	order:1;
+}
+.woobt-choose label {
+	order:2;
+	position:relative;
+	display: block;
+	width: 36px;
+	height: 18px;
+	text-indent: -150%;
+	clip: rect(0 0 0 0);
+	color: transparent;
+	user-select: none;
+}
+.woobt-choose label::before,
+.woobt-choose label::after {
+  content: "";
+  display: block;
+  position: absolute;
+  cursor: pointer;
+}
+.woobt-choose label::before {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999em;
+  -webkit-transition: background-color 0.25s ease;
+  transition: background-color 0.25s ease;
+  background-color: #ff5001;
+	
+}
+.woobt-choose label::after {
+  top: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.45);
+  -webkit-transition: left 0.25s ease;
+  transition: left 0.25s ease;
+  left: 18px;
+	
+}
+.woobt-hide label::before{
+  background-color: #dedede;
+}
+.woobt-hide label::after{
+  left: 0;
+}
+.woobt-availability{
+	display:none;
+}
+.woobt-additional{
+    visibility: hidden;
+}
+.woobt-total{
+	font-size: 15px;
+    font-weight: bold;
+}
+.woobt-products .woobt-product .woobt-price {
+    width: auto;
+    flex: 0 0 50px;
+    max-width: 100%; 
+    font-size: 14px;
+	text-align:center;
+}
+/* Add to cart Button */
+
+.single_add_to_cart_button{
+  width: 100%;
+}
+
+.quantity{
+	width: 97%;
+}
+/* Description */
+.tabs-layout-accordion>.wd-accordion-item>.wd-accordion-title .wd-accordion-title-text{
+	font-family: Orange, sans-serif;
+}
+.single-product .summary-inner div.woocommerce-product-details__short-description{
+	order:6;
+	margin-top:20px;
+}
+
+/*-------------------------------------------*\
+    			Checkout
+\*-------------------------------------------*/
+
+/* Tamara Logo */
+.payment_method_tamara-gateway-pay-in-3 label img{
+	display:none;
+}
+
+.rtl .payment_method_tamara-gateway-pay-in-3:after {
+    content: url('https://www.orangebedbath.com/wp-content/uploads/2022/05/Tamara-Logo-AR-1024x332-1.png');
+    position: absolute;
+    left: 0;
+    width: 80px;
+    height: auto;
+	display: none;
+}
+
+/* Tax */
+.includes_tax .woocommerce-Price-amount{
+	display:none;
+}
+
+/* OTP */
+#billing_phone{
+	direction:ltr;
+	text-align:end;
+}
+.intl-tel-input .selected-flag .iti-flag{
+	left: 10px;
+}
+	
+/* Coupon Field */
+.woocommerce-form-coupon-toggle{
+	display:none;
+}
+.checkout_coupon{
+	display:block !important;
+}
+@media all and (min-width:768px){
+	.woocommerce>.woocommerce-checkout{
+	flex-wrap: nowrap !important;
+	}
+}
+
+/*-------------------------------------------*\
+    		        Registration
+\*-------------------------------------------*/
+#ka_captcha_failed{
+	display:none;
+}
+/*-------------------------------------------*\
+    		        404
+\*-------------------------------------------*/
+@media all and (max-width:768px){
+	.page-id-355598 .main-page-wrapper{
+		min-height:auto;
+	}
+	#post-355598 .desktop-404{
+		display:none
+	}
+}
+
+@media all and (min-width:768px){
+	#post-355598 .mobile-404{
+		display:none !important
+	}
+}
+
+/*-------------------------------------------*\
+    				Temp
+\*-------------------------------------------*/
+
+/* Category Description */
+.term-description{
+	display:none;
+}
+
+@media all and (max-width:768px){
+	.product-carousel .products{
+	 flex-wrap: nowrap;
+   	 overflow-x: scroll;
+		overflow-y: hide;
+}
+	}
+
+.wd-hover-icons .wrapp-buttons{
+	display:none;
+}
+
+
+.woocommerce-shipping-totals select{
+	font-size:12px;
+}
+.woocommerce-shipping-totals td{
+	padding:5px;
+}
+.woocommerce-shipping-methods li:nth-of-type(2){
+	display:none;
+} */
