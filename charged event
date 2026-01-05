@@ -1,0 +1,191 @@
+
+/* 
+ *  Hook: send event when order status changes to processing/completed/on-hold
+ */
+
+add_action('woocommerce_order_status_changed', function($order_id, $old_status, $new_status, $order) {
+    $target_statuses = ['processing', 'completed', 'on-hold'];
+    if (! in_array($new_status, $target_statuses, true)) {
+        return;
+    }
+
+    if ( get_post_meta($order_id, '_clevertap_charged_sent', true) ) {
+        return;
+    }
+
+    send_clevertap_charged_event_backend($order);
+    update_post_meta($order_id, '_clevertap_charged_sent', 1);
+}, 10, 4);
+
+
+function send_clevertap_charged_event_backend( $order ) {
+    if ( ! $order instanceof WC_Order ) {
+        return;
+    }
+
+    // CleverTap credentials / endpoint
+    $clevertap_account_id = 'W67-Z68-K57Z';
+    $clevertap_passcode   = 'IMQ-ZIW-GPEL';
+    $clevertap_url        = 'https://mec1.api.clevertap.com/1/upload';
+
+    $order_id   = $order->get_id();
+    $amount     = (float) $order->get_total();
+    $payment    = $order->get_payment_method_title();
+    $email      = trim( (string) $order->get_billing_email() );
+
+    
+    //  require email identity
+    if ( empty( $email ) ) {
+        error_log( "CLEVERTAP SKIP — order {$order_id} has no billing email. Event not sent." );
+        return;
+    }
+
+    $items = [];
+    foreach ( $order->get_items() as $order_item ) {
+        $product = $order_item->get_product();
+        $primary_category = '';
+        $sku = 'N/A';
+		$stock_quantity = null;
+        
+        if ( $product && $product->get_id() ) {
+            // Get SKU 
+            $product_sku = $product->get_sku();
+            if (!empty($product_sku)) {
+                $sku = $product_sku;
+            }
+			
+			// get the stock quatity for ( simpel - variable products)
+		
+		if ( $product && $product->managing_stock() ) {
+			$stock_quantity = $product->get_stock_quantity();
+	}
+            
+            // For variations, we need to use the parent product ID for categories
+            $product_id = $product->get_id();
+            $parent_id = $product->get_parent_id();
+            $category_product_id = ($parent_id > 0) ? $parent_id : $product_id;
+            
+            // First try: Direct WooCommerce category method
+            $categories = wc_get_product_category_list($category_product_id);
+            if (!empty($categories)) {
+                // Extract just the text without HTML
+                $categories = strip_tags($categories);
+                $cat_array = explode(',', $categories);
+                if (!empty($cat_array)) {
+                    $primary_category = trim($cat_array[0]);
+                }
+            }
+            
+            // Second try: Get from terms if first method failed
+            if (empty($primary_category)) {
+                $terms = get_the_terms($category_product_id, 'product_cat');
+                if (!is_wp_error($terms) && !empty($terms)) {
+                    // First try to find the "primary" category if using Yoast SEO
+                    $primary_cat_id = get_post_meta($category_product_id, '_yoast_wpseo_primary_product_cat', true);
+                    if ($primary_cat_id) {
+                        foreach ($terms as $term) {
+                            if ($term->term_id == $primary_cat_id) {
+                                $primary_category = $term->name;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If no primary category found yet, use the first in hierarchy
+                    if (empty($primary_category) && !empty($terms)) {
+                        // Sort by ancestry - terms with parents come later
+                        usort($terms, function($a, $b) {
+                            return ($a->parent === 0 && $b->parent !== 0) ? -1 : 1;
+                        });
+                        
+                        // Get the first category (typically the one shown in breadcrumbs)
+                        $primary_category = $terms[0]->name;
+                    }
+                }
+            }
+            
+            // Third try: Use direct product category IDs
+            if (empty($primary_category)) {
+                $cat_ids = $product->get_category_ids();
+                if (!empty($cat_ids)) {
+                    $cat_term = get_term_by('id', $cat_ids[0], 'product_cat');
+                    if ($cat_term && !is_wp_error($cat_term)) {
+                        $primary_category = $cat_term->name;
+                    }
+                }
+            }
+            
+            // Final fallback
+            if (empty($primary_category)) {
+                $primary_category = "Uncategorized";
+            }
+        }
+
+        $items[] = [
+            "Category"     => $primary_category,
+            "Product name" => $order_item->get_name(),
+            "Quantity"     => (int) $order_item->get_quantity(),
+			"Stock quantity" => is_null( $stock_quantity ) ? null : (int) $stock_quantity,
+            "Price"        => (int) $order_item->get_total(),
+            "Order-id"     => (int) $order_id,
+            "SKU"          => $sku,
+            "Product ID"   => ($product && $product->get_id()) ? (int) $product->get_id() : 0,
+        ];
+    }
+
+    // Build event entry with basic order info only
+    $event_entry = [
+        "type"     => "event",
+        "evtName"  => "Charged",
+        "evtData"  => [
+            "Payment mode" => $payment,
+            "Email"        => $email,
+            "Order-id"     => (int) $order_id,
+            "Amount"       => $amount,
+            "Total items"  => count($items)
+        ],
+    ];
+    
+    // Add each product directly to event data to avoid "Items >>" prefix
+    foreach ($items as $index => $item) {
+        $product_number = $index + 1;
+        foreach ($item as $key => $value) {
+            $event_entry["evtData"]["Product " . $product_number . " " . $key] = $value;
+        }
+    }
+
+    // attach identity only when email is present
+    $event_entry['identity'] = (string) $email;
+
+    $payload = [
+        "d" => [
+            $event_entry
+        ],
+    ];
+
+    $json_body = json_encode( $payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+
+    // debug logs: payload and attempt
+    error_log( "CLEVERTAP DEBUG — order {$order_id} sending payload: " . $json_body );
+
+    $response = wp_remote_post( $clevertap_url, [
+        'method'  => 'POST',
+        'headers' => [
+            'X-CleverTap-Account-Id' => $clevertap_account_id,
+            'X-CleverTap-Passcode'   => $clevertap_passcode,
+            'Content-Type'           => 'application/json; charset=utf-8',
+        ],
+        'body'    => $json_body,
+        'timeout' => 30,
+    ] );
+
+    if ( is_wp_error( $response ) ) {
+        error_log( "❌ CleverTap API error for order {$order_id}: " . $response->get_error_message() );
+    } else {
+        $code = wp_remote_retrieve_response_code( $response );
+        $body = wp_remote_retrieve_body( $response );
+        error_log( "✅ CleverTap API responded for order {$order_id} [HTTP {$code}]: {$body}" );
+    }
+}
+
+
