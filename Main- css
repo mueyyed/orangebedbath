@@ -1,26 +1,58 @@
-/* Arabic Font */
-body.rtl , .rtl p, .rtl h1, .rtl h2, .rtl h3, .rtl h4, .rtl h5, .rtl h6, .rtl a, .rtl .wd-tools-text, .rtl .menu-open-label, .rtl .s, .rtl .topbar-text, .rtl .topbar-left-text,
-.rtl .title-wrapper.text-center, .rtl .tab-label, .rtl .share-title, .rtl .button, .rtl button, .rtl .woocommerce-breadcrumb, .rtl .comment-respond, .rtl .woodmart-shop-tools,
-.rtl .entry-header, .rtl .suggestion-title, .rtl .woocommerce-info, .rtl .payment_method_hyperpay, .rtl table th, .rtl .yith_wcmc_subscribe_me_label, .rtl .woocommerce-form__label-for-checkbox,
-.rtl #mc_embed_signup input.email, .rtl .woodmart-checkout-steps ul li, .rtl .single-post-navigation .post-title, .rtl address, .rtl em, .rtl legend, .rtl div.nsl-container .nsl-button-default div.nsl-button-label-container,
-.rtl .woocommerce-Reviews .comment-reply-title, .rtl .br_alabel span {
-    font-family: 'Orange',sans-serif !important;
-    font-style: normal !important;
-    letter-spacing: 0;
-}
-/*.fa, .star-rating, .star-rating span{
-    font-family: FontAwesome !important;
-}*/
+/*-----bar header ----*/
 
-/* Header */
-/*.whb-top-bar{
-    background: #611216 !important; 
-    background: -webkit-linear-gradient(left, #acadb6 0%,#ffffff 44%,#848689 76%,#acadb6 100%) !important;
-    background: linear-gradient(to right, #ffffff 0%,#611216 10%,#acadb6 90%,#ffffff 100%) !important;  
-}*/
 .whb-top-bar{
-    background: #acadb6 !important; 
+    background: #acadb6; 
 }
+
+.apple-ticker {
+  width: 100%;
+  height: 40px;
+  background: #acadb6;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.apple-ticker-track {
+  display: flex;
+  white-space: nowrap;
+  animation: tickerMove 20s linear infinite;
+  will-change: transform;
+}
+
+.apple-ticker-item {
+  color: white;
+  font-size: 14px;
+  padding: 0 60px;
+  flex-shrink: 0;
+  direction: rtl; /* Ensures Arabic displays correctly */
+}
+
+@keyframes tickerMove {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(50%); /* Adjust based on direction and content length */
+  }
+}
+
+/* Pause animation on hover so people can read */
+.apple-ticker:hover .apple-ticker-track {
+  animation-play-state: paused;
+}
+
+
+/*-------------------------*/
+
+    #wc-sa-checkout-map .gm-svpc,
+    #wc-sa-checkout-map .gm-style-mtc > div[title*="Street View"] {
+        display: none !important;
+    }
+
+/*-------------*/
+
 .searchform input[type="text"]{
     height: 40px !important;
 }
@@ -124,18 +156,7 @@ body.rtl , .rtl p, .rtl h1, .rtl h2, .rtl h3, .rtl h4, .rtl h5, .rtl h6, .rtl a,
 .products-footer{
   margin-bottom: 20px;
 }
-/* Cart Page */
-.woodmart-checkout-steps ul li a,
-.woodmart-checkout-steps ul li span{
-    font-weight: 400 !Important;
-}
-.woodmart-checkout-steps ul li.step-active a,
-.woodmart-checkout-steps ul li.step-active a span{
-    font-weight: 600 !Important;
-}
-.step-active a span::after{
-    background: none !important;
-}
+
 /* Order Page */
 
 .order-total th{
@@ -412,13 +433,9 @@ body:not(.global-full-screen-menu) .woodmart-header-links > ul > li > a{
   display:none !important;
 }
 
-/*************************************************/
-/******************** 2020 ***********************/
-/*************************************************/
+/**** 2020 *****/
 
-/***************************/
-/********* Common **********/
-/***************************/
+
 .widget{
   margin-bottom: 0px;
   border-bottom: none;
@@ -426,9 +443,8 @@ body:not(.global-full-screen-menu) .woodmart-header-links > ul > li > a{
 .widget-title{
   font-size:20px;
 }
-/***************************/
-/********* Header **********/
-/***************************/
+
+/**** Header ****/
 
 /* Hide Language Switcher */
 .wpml-ls-item {
@@ -436,9 +452,7 @@ body:not(.global-full-screen-menu) .woodmart-header-links > ul > li > a{
 }
 
 
-/***************************/
-/********* Footer **********/
-/***************************/
+/****** Footer *******/
 
 .alignright{margin-top:-59px;}
 
@@ -448,29 +462,10 @@ body:not(.global-full-screen-menu) .woodmart-header-links > ul > li > a{
 }
 .wpb_wrapper{ margin-inline:10px;}
 
-//
 .wpb_content_element{margin-bottom:-13px;}
 
-/*mc_embed_signup.input.email {
-	text-align:center; height: 40px;width:40%;}*/
 
-//
-
-/*.wpb_text_column .wpb_content_element {margin-top:-38px;}*/
-/*.copyrights-wrapper .copyrights-two-columns{margin:-156px;}*/
-
-/***************************/
-/********* Cart & Checkout **********/
-/***************************/
-/* p.form-row-first{
-  float:right;
-}
-p.form-row-last{
-  float:left;
-}
-.woodmart-checkout-steps ul li:after{
-      content: "\f119";
-} */
+/****** Cart & Checkout *****/
 
 .rtl .mfp-content .mc4wp-alert, .rtl .search-no-results.woocommerce .woocommerce-info,
 .rtl .woocommerce-checkout .woocommerce [role="alert"], .rtl .woocommerce-form-coupon-toggle > .woocommerce-info,
