@@ -1,0 +1,686 @@
+// ============================================================
+// Global trackEvent function (with retry limit)
+// ============================================================
+function trackEvent(eventName, props, retryCount = 0) {
+  if (typeof clevertap !== "undefined" && clevertap.event) {
+    clevertap.event.push(eventName, props || {});
+// 	  clevertap.event.push(eventName, {
+//   ...(props || {}),
+//   ts: Math.floor(Date.now() / 1000)
+// });
+    console.log("✅ CleverTap:", eventName, props);
+  } else if (retryCount < 10) {
+    console.log("⚠️ CleverTap not ready, retrying...", eventName);
+    setTimeout(() => trackEvent(eventName, props, retryCount + 1), 3000);
+  } else {
+    console.warn("❌ CleverTap not available after retries:", eventName);
+  }
+}
+
+// ============================================================
+// Product Viewed Event
+// ============================================================
+
+(function () {
+  // Helper functions
+  function t(sel){return document.querySelector(sel)?.textContent.trim() || '';}
+  function p(sel){
+    const v = document.querySelector(sel)?.textContent || document.querySelector(sel)?.content || ''; 
+    return parseFloat((v||'').replace(/[^\d.,]/g,'').replace(/,/g,'')) || 0;
+  }
+  function stripHtml(s) {
+    return (s || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  // Store last event key to prevent duplicates
+  let lastEventKey = null;
+
+  // Main product view tracking function
+  function trackProductViewed() {
+    const title = document.querySelector("h1.product_title");
+    if (!title) return;
+
+    const product_id = document.querySelector('form.cart input[name="product_id"]')?.value?.trim() 
+                    || document.body.className.match(/postid-(\d+)/)?.[1] 
+                    || "N/A";
+    
+    const selected_variation_id = document.querySelector('form.variations_form input[name="variation_id"]')?.value;
+    const isVariation = !!(selected_variation_id && parseInt(selected_variation_id, 10) > 0);
+    
+    const sku = (isVariation ? (t('.single_variation .sku') || t('.product .sku') || t('.sku_wrapper .sku')) 
+                           : (t('.sku') || t('.sku_wrapper .sku'))) || "N/A";
+    const category = t('.woocommerce-breadcrumb a:nth-last-child(2)') || t('.product_meta .posted_in a') || "N/A";
+    const selling_price = (isVariation ? (p('.single_variation .price .amount') || p('.single_variation .price')) : null) 
+                       || p('.summary .price .amount') || p('.woocommerce-Price-amount') 
+                       || p('.price') || p('[itemprop="price"]') || p('meta[itemprop="price"]');
+    const stock_availability = (isVariation ? (t('.single_variation .stock') || t('.single_variation .availability')) : null) 
+                           || t('.summary .stock') || t('.stock') || t('.availability') || "N/A";
+    
+    const props = { 
+      product_name: title.innerText.trim(), 
+      product_id, 
+      sku, 
+      category, 
+      selling_price, 
+      stock_availability,
+      variation_id: isVariation ? selected_variation_id : null
+    };
+
+    sendProductViewedEvent(props);
+  }
+
+  // Common function to send event (with de-duplication)
+  function sendProductViewedEvent(props) {
+    // Create a unique key based on product properties to prevent duplicate events
+    const eventKey = `${props.product_id}|${props.variation_id || '0'}|${props.sku}|${props.selling_price}`;
+    
+    // Only send if this is a new combination
+    if (eventKey !== lastEventKey) {
+      lastEventKey = eventKey;
+      if (typeof trackEvent === 'function') 
+        trackEvent("Product_Viewed", props);
+      else 
+        console.log('Product_Viewed', props);
+    }
+  }
+
+  // Initialize on page load
+  document.addEventListener("DOMContentLoaded", function() {
+    trackProductViewed();
+    
+    // Initialize variation tracking if applicable
+    if (window.jQuery) {
+      jQuery(function ($) {
+        var $form = $('.variations_form');
+        if (!$form.length) return;
+        
+        // Track when a variation is selected
+        $form.on('found_variation', function (e, variation) {
+          const title = document.querySelector("h1.product_title");
+          if (!title) return;
+
+          const product_id = document.querySelector('form.cart input[name="product_id"]')?.value?.trim()
+            || document.body.className.match(/postid-(\d+)/)?.[1] || "N/A";
+
+          const category = document.querySelector('.woocommerce-breadcrumb a:nth-last-child(2)')?.textContent.trim()
+                        || document.querySelector('.product_meta .posted_in a')?.textContent.trim()
+                        || "N/A";
+
+          const selling_price =
+            (typeof variation.display_price === 'number' ? variation.display_price : null) ||
+            (function () {
+              const el = document.querySelector('.single_variation .price .amount, .single_variation .price');
+              const raw = el?.getAttribute?.('content') || el?.textContent || '';
+              const num = parseFloat(String(raw).replace(/[^\d.,]/g, '').replace(/,/g, ''));
+              return isNaN(num) ? 0 : num;
+            })();
+
+          const stock_availability =
+            stripHtml(variation.availability_html) ||
+            (variation.is_in_stock ? "In stock" : "Out of stock");
+
+          const props = {
+            product_name: title.textContent.trim(),
+            product_id,
+            category,
+            sku: variation.sku || "N/A",
+            selling_price,
+            stock_availability,
+            variation_id: variation.variation_id || null,
+            stock_qty: (typeof variation.max_qty === 'number' ? variation.max_qty : null)
+          };
+
+          sendProductViewedEvent(props);
+        });
+
+        // When variation is reset/cleared
+        $form.on('reset_data', function () {
+          trackProductViewed();
+        });
+
+        // Check if a variation is already selected on load
+        setTimeout(function () {
+          $form.trigger('check_variations');
+        }, 10);
+      });
+    }
+  });
+})();
+
+ 
+// ============================================================
+// Search Tracking
+// ============================================================
+(function () {
+  const searchForm = document.querySelector("form.wd-search-form");
+  if (searchForm) {
+    searchForm.addEventListener("submit", function () {
+      const keyword = searchForm.querySelector("input.wd-search-input")?.value.trim() || "N/A";
+      trackEvent("Searched", {
+        keyword,
+        number_of_search_results: "pending_on_next_page",
+        source: "Homepage_Search_Form",
+      });
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.location.href.includes("?s=")) {
+      const keyword = new URLSearchParams(window.location.search).get("s") || "N/A";
+      const numberOfResults = document.querySelectorAll(".product").length;
+
+      trackEvent("Searched", {
+        keyword,
+        number_of_search_results: numberOfResults,
+        source: "Search_Results_Page",
+      });
+    }
+  });
+})();
+
+// ============================================================
+// Global Click Listener (handles Add to Cart, Checkout, Wishlist, Navigation)
+// ============================================================
+document.addEventListener("click", function (e) {
+  let link = e.target.closest("a");
+  let addToCartBtn = e.target.closest("a.add_to_cart_button");
+  let singleAddToCartBtn = e.target.closest("button.single_add_to_cart_button");
+
+  // Add to Cart (Category Page)
+//   if (addToCartBtn) {
+//     const productContainer = addToCartBtn.closest(".product");
+//     let productDetails = {
+//       product_id: addToCartBtn.dataset.productId || "N/A",
+//       source: "Product_Listing_Page",
+//       product_name: productContainer?.querySelector(".product-title a")?.innerText.trim() || "N/A",
+//       product_price: parseFloat(productContainer?.querySelector(".price .amount bdi")?.innerText.replace(/[^\d.]/g, "") || "0")
+//     };
+//     trackEvent("Product_Added_to_Cart", productDetails);
+//   }
+
+// 	// Add to Cart (Single Product Page)
+// 	if (singleAddToCartBtn) {
+//   const selected_variation_id = document.querySelector('form.variations_form input[name="variation_id"]')?.value;
+//   const isVariation = !!(selected_variation_id && parseInt(selected_variation_id, 10) > 0);
+
+//   // Get the correct product ID based on whether it's a variation or not
+//   const product_id = isVariation ? 
+//     selected_variation_id : 
+//     (singleAddToCartBtn.value || document.querySelector('form.cart input[name="product_id"]')?.value?.trim() || "N/A");
+
+//   // Get the correct SKU based on whether it's a variation or not
+//   const sku = (isVariation ? 
+//     (document.querySelector('.single_variation .sku')?.innerText.trim() || 
+//      document.querySelector('.product .sku')?.innerText.trim()) : 
+//     null) || document.querySelector('.sku')?.innerText.trim() || 
+//     document.querySelector('.sku_wrapper .sku')?.innerText.trim() || "N/A";
+  
+//   // Get the correct price (variation price if applicable)
+//   const price_element = isVariation ? 
+//     document.querySelector('.single_variation .price .amount, .single_variation .price') : 
+//     document.querySelector('.price .amount');
+//   const price_text = price_element?.innerText || "0";
+//   const product_price = parseFloat(price_text.replace(/[^\d.,]/g, '').replace(/,/g, '.')) || 0;
+
+//   trackEvent("Product_Added_to_Cart", {
+//     product_name: document.querySelector("h1.product_title")?.innerText.trim() || "N/A",
+//     product_price: product_price,
+//     product_id: product_id,
+//     variation_id: isVariation ? selected_variation_id : null,
+//     quantity: parseInt(document.querySelector('input[name="quantity"]')?.value || "1"),
+//     sku: sku,
+//     source: "Product_Page",
+//   });
+// }
+	
+	
+	// Add to Cart (Single Product Page) --> helper
+function getStockQuantity(isVariation, selectedVariationId) {
+  // 1) Try variation stock from data-product_variations
+  if (isVariation && selectedVariationId) {
+    const form = document.querySelector('form.variations_form.cart');
+    if (form) {
+      let data = form.dataset.product_variations;
+
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (e) { data = []; }
+      }
+
+      if (Array.isArray(data)) {
+        const v = data.find(d => String(d.variation_id) === String(selectedVariationId));
+        if (v && v.max_qty != null) return parseInt(v.max_qty, 10);
+      }
+    }
+  }
+
+  // 2) Fallback: quantity input max (simple or variable)
+  const qtyInput =
+    document.querySelector('form.cart input.qty') ||
+    document.querySelector('.single_variation_wrap input.qty');
+
+  if (qtyInput) {
+    const maxAttr = qtyInput.getAttribute('max');
+    if (maxAttr && maxAttr !== 'NaN') return parseInt(maxAttr, 10);
+  }
+
+  // 3) Fallback: first number in .stock text (if any)
+  const stockEl = document.querySelector('.summary .stock, .product .stock');
+  if (stockEl) {
+    const match = (stockEl.textContent || '').match(/\d+/);
+    if (match) return parseInt(match[0], 10);
+  }
+
+  return null;
+}
+
+	
+	// Add to Cart (Single Product Page)
+if (singleAddToCartBtn) {
+  const selected_variation_id =
+    document.querySelector('form.variations_form input[name="variation_id"]')?.value;
+  const isVariation =
+    !!(selected_variation_id && parseInt(selected_variation_id, 10) > 0);
+
+  const product_id = isVariation
+    ? selected_variation_id
+    : (singleAddToCartBtn.value ||
+       document.querySelector('form.cart input[name="product_id"]')?.value?.trim() ||
+       "N/A");
+
+  const sku = (isVariation
+      ? (document.querySelector('.single_variation .sku')?.innerText.trim() ||
+         document.querySelector('.product .sku')?.innerText.trim())
+      : null
+    ) ||
+    document.querySelector('.sku')?.innerText.trim() ||
+    document.querySelector('.sku_wrapper .sku')?.innerText.trim() ||
+    "N/A";
+
+  const price_element = isVariation
+    ? document.querySelector('.single_variation .price .amount, .single_variation .price')
+    : document.querySelector('.price .amount');
+  const price_text = price_element?.innerText || "0";
+  const product_price =
+    parseFloat(price_text.replace(/[^\d.,]/g, '').replace(/,/g, '.')) || 0;
+
+  const stock_quantity = getStockQuantity(isVariation, selected_variation_id);
+
+  trackEvent("Product_Added_to_Cart", {
+    product_name: document.querySelector("h1.product_title")?.innerText.trim() || "N/A",
+    product_price,
+    product_id,
+    variation_id: isVariation ? selected_variation_id : null,
+    quantity: parseInt(document.querySelector('input[name="quantity"]')?.value || "1"),
+    sku,
+    source: "Product_Page",
+    stock_quantity, // extra attribute
+  });
+}
+
+	
+	
+  // Checkout Started
+  if (e.target.closest("a.checkout-button")) {
+    const cartItems = document.querySelectorAll(".cart_item");
+    let checkoutDetails = { products: [], total_price: 0, total_quantity: 0 };
+
+    cartItems.forEach((item) => {
+      const productName = item.querySelector(".product-name a")?.innerText.trim() || "N/A";
+      const productPrice = parseFloat(item.querySelector(".product-subtotal .amount")?.innerText.replace(/[^\d.]/g, "") || "0");
+      const quantity = parseInt(item.querySelector(".product-quantity input.qty")?.value || "0");
+      checkoutDetails.total_quantity += quantity;
+      checkoutDetails.total_price += productPrice;
+      checkoutDetails.products.push({ name: productName, price: productPrice, quantity });
+    });
+
+    trackEvent("Checkout_Started", checkoutDetails);
+  }
+
+						  
+// Purchase Complete (place order )
+						  
+ if (e.target.closest("#place_order")) {
+  // --------- Helpers ---------
+  function parsePrice(str) {
+    if (!str) return 0;
+    // remove common thousands separators & non-numeric characters, keep decimal dot
+    const cleaned = String(str).replace(/[,٬\s\u202f]/g, "").replace(/[^\d.]/g, "");
+    return parseFloat(cleaned) || 0;
+  }
+
+  function safeAdd(obj, key, value) {
+    if (value === null || value === undefined) return;
+    if (typeof value === "string") {
+      const s = value.trim();
+      if (s === "" || s.toUpperCase() === "N/A") return;
+      obj[key] = s;
+      return;
+    }
+    if (typeof value === "number") {
+      if (!isFinite(value)) return;
+      obj[key] = value; // allow 0
+      return;
+    }
+    if (typeof value === "boolean") {
+      obj[key] = value;
+      return;
+    }
+    if (Array.isArray(value)) {
+      if (value.length === 0) return;
+      obj[key] = value.join(", ");
+      return;
+    }
+    // fallback
+    obj[key] = String(value);
+  }
+
+  // --------- Collect user fields (no "N/A" defaults) ---------
+  const firstName = document.querySelector('input[name="billing_first_name"]')?.value?.trim() || "";
+  const lastName = document.querySelector('input[name="billing_last_name"]')?.value?.trim() || "";
+  const fullName = (firstName + " " + lastName).trim();
+
+  const email = document.querySelector('input[name="billing_email"]')?.value?.trim() || "";
+  const rawPhone = document.querySelector('input[name="billing_phone"]')?.value?.trim() || "";
+  const city = document.querySelector('select[name="billing_city"]')?.value?.trim() || "";
+
+    function normalizeSaudiPhone(input) {
+  if (!input) return "N/A";
+
+  let phone = input.trim().replace(/\s+/g, ""); // remove spaces
+
+  if (phone.startsWith("0")) {
+    return "+966" + phone.slice(1);
+  } else if (phone.startsWith("+966")) {
+    return phone;
+  } else {
+    return "+966" + phone;
+  }
+}
+  const phone = normalizeSaudiPhone(rawPhone);
+  
+  const identity = phone || email || "";
+
+  const paymentMethodElement = document.querySelector('input[name="payment_method"]:checked');
+  const paymentMethod = paymentMethodElement ? (paymentMethodElement.value || "").trim() : "";
+
+  // --------- Collect cart items ---------
+  const cartItems = document.querySelectorAll(
+    "table.shop_table.woocommerce-checkout-review-order-table tbody tr.cart_item"
+  );
+
+  const orderDetails = {
+    event: "Order_Placed",
+    timestamp: new Date().toISOString(),
+    products: [],
+    identity: identity,
+    total_quantity: 0,
+    subtotal_price: 0,
+    grand_total: 0,
+    user_name: fullName,
+    user_email: email,
+    user_phone: phone,
+    user_city: city,
+    payment_method: paymentMethod,
+  };
+
+  cartItems.forEach((item) => {
+    const productName =
+      item.querySelector(
+        "td.wd-checkout-prod .wd-checkout-prod-cont .wd-checkout-prod-title .cart-product-label"
+      )?.innerText?.trim() || "";
+
+    let quantity =
+      parseInt(item.querySelector('input[type="hidden"][name*="[qty]"]')?.value || "", 10) || 0;
+
+    if (!quantity) {
+      const qtyText = item.querySelector(
+        "td.wd-checkout-prod .wd-checkout-prod-cont .wd-checkout-prod-title .product-quantity"
+      )?.innerText;
+      quantity = parseInt(String(qtyText || "").replace(/\D/g, ""), 10) || 0;
+    }
+
+    // Subtotal for that row (the visible total per product row)
+    const subtotalStr = item.querySelector(
+      "td.wd-checkout-prod .wd-checkout-prod-cont .wd-checkout-prod-total.product-total .woocommerce-Price-amount.amount"
+    )?.innerText;
+    const subtotal = parsePrice(subtotalStr);
+
+    // Unit price: compute from subtotal and qty if qty > 0; otherwise attempt to find a price element
+    let unitPrice = 0;
+    if (quantity > 0) {
+      unitPrice = +(subtotal / quantity).toFixed(2);
+    } else {
+      // try to find any explicit price (some themes show unit price in a .product-price element)
+      const unitStr = item.querySelector(
+        "td.wd-checkout-prod .wd-checkout-prod-cont .product-price .woocommerce-Price-amount.amount"
+      )?.innerText;
+      unitPrice = parsePrice(unitStr) || subtotal;
+    }
+
+    // Collect variations (color/size) if present
+    const variationNodes = item.querySelectorAll(".wd-checkout-prod-title .variation .item-variation-value p, .wd-checkout-prod-title .variation .item-variation-value");
+    const variations = [];
+    if (variationNodes && variationNodes.length) {
+      variationNodes.forEach((v) => {
+        const t = (v.innerText || v.textContent || "").trim();
+        if (t) variations.push(t);
+      });
+    }
+
+    // Only add product rows that have at least a name or subtotal
+    if (productName || subtotal > 0 || quantity > 0) {
+      orderDetails.products.push({
+        name: productName || "",
+        quantity: quantity,
+        unit_price: unitPrice,
+        subtotal: subtotal,
+        variations: variations,  
+      });
+
+      orderDetails.total_quantity += quantity;
+      orderDetails.subtotal_price += subtotal;
+    }
+  });
+
+  // --------- Grand total 
+  const orderTotal = parsePrice(
+    document.querySelector(
+      "table.shop_table.woocommerce-checkout-review-order-table tfoot tr.order-total td .woocommerce-Price-amount.amount"
+    )?.innerText
+  );
+  orderDetails.grand_total = orderTotal;
+  orderDetails.total_price = orderTotal; 
+
+  // --------- Order ID and currency ---------
+  const orderId = document.querySelector('input[name="order_id"]')?.value || Date.now();
+  orderDetails.order_id = orderId;
+
+  const currency = document.querySelector("meta[property='product:currency']")?.content || "SAR";
+  orderDetails.currency = currency;
+
+  // --------- Push user profile (CleverTap) ---------
+  try {
+    clevertap.onUserLogin.push({
+      Site: {
+        Name: fullName || undefined,
+        Identity: identity || undefined,
+        Email: email || undefined,
+        Phone: phone || undefined,
+        City: city || undefined,
+      },
+    });
+  } catch (err) {
+    console.warn("clevertap.onUserLogin push failed:", err);
+  }
+
+  // --------- Flatten product arrays into strings for CleverTap  ---------
+  const productNames = orderDetails.products.map((p) => p.name || "");
+  const productQuantities = orderDetails.products.map((p) => p.quantity || 0);
+  const productUnitPrices = orderDetails.products.map((p) => p.unit_price || 0);
+  const productSubtotals = orderDetails.products.map((p) => p.subtotal || 0);
+  const productVariations = orderDetails.products.map((p) => (p.variations || []).join(" | "));
+
+  // --------- Build eventProps  ---------
+  const eventProps = {};
+  safeAdd(eventProps, "identity", orderDetails.identity);
+  safeAdd(eventProps, "order_id", orderDetails.order_id);
+  safeAdd(eventProps, "total_quantity", orderDetails.total_quantity); // number (allowed, even if 0)
+  safeAdd(eventProps, "subtotal_price", orderDetails.subtotal_price);
+  safeAdd(eventProps, "grand_total", orderDetails.grand_total);
+  safeAdd(eventProps, "user_name", orderDetails.user_name);
+  safeAdd(eventProps, "user_email", orderDetails.user_email);
+  safeAdd(eventProps, "user_phone", orderDetails.user_phone);
+  safeAdd(eventProps, "user_city", orderDetails.user_city);
+  safeAdd(eventProps, "payment_method", orderDetails.payment_method);
+  safeAdd(eventProps, "currency", orderDetails.currency);
+
+// Flatten product details into safe strings--------
+  if (productNames.length) safeAdd(eventProps, "product_names", productNames);
+  if (productQuantities.length) safeAdd(eventProps, "product_quantities", productQuantities);
+  if (productUnitPrices.length) safeAdd(eventProps, "product_unit_prices", productUnitPrices);
+  if (productSubtotals.length) safeAdd(eventProps, "product_subtotals", productSubtotals);
+  if (productVariations.length && productVariations.some((v) => v)) safeAdd(eventProps, "product_variations", productVariations);
+
+  // Final debug log so you can inspect the exact payload sent
+  console.log("✅ Prepared CleverTap payload:", eventProps);
+
+  // --------- Send to CleverTap (uses existing trackEvent if present, otherwise fallback) ---------
+  try {
+    if (typeof trackEvent === "function") {
+      trackEvent(orderDetails.event, eventProps);
+//       console.log("✅ Sent via trackEvent:", orderDetails.event);
+    } else if (window.clevertap && clevertap.event && typeof clevertap.event.push === "function") {
+      clevertap.event.push(orderDetails.event, eventProps);
+//       console.log("✅ Sent via clevertap.event.push:", orderDetails.event);
+    } else {
+      console.warn("No trackEvent or clevertap.event.push available to send event.");
+    }
+  } catch (err) {
+    console.error("Failed to send CleverTap event:", err, eventProps);
+  }
+
+}
+	  
+	
+						  
+	// Wishlist Added
+		if (e.target.closest("a.add_to_wishlist") || e.target.closest("div.wd-wishlist-btn")) {
+		  const gtmVal = document.querySelector('input[name="gtm4wp_product_data"]')?.value || '';
+		  let meta = {};
+		  try { meta = gtmVal ? JSON.parse(gtmVal.replace(/"/g, '"')) : {}; } catch (err) { meta = {}; }
+		  const sku = meta.sku || document.querySelector('.sku')?.innerText.trim() || document.querySelector('.sku_wrapper .sku')?.innerText.trim() || "N/A";
+		  const category = meta.item_category || document.querySelector('.woocommerce-breadcrumb a:nth-last-child(2)')?.innerText.trim() || document.querySelector('.product_meta .posted_in a')?.innerText.trim() || "N/A";
+
+		  trackEvent("Wishlist_Added", {
+			product_name: document.querySelector("h1.product_title")?.innerText.trim() || "N/A",
+			product_id: document.querySelector(".sku_wrapper .sku")?.innerText.trim() || "N/A",
+			sku: sku,
+			category: category,
+			price: parseFloat(document.querySelector(".price .amount")?.innerText.replace(/[^\d.]/g, "") || "0"),
+			source: "Product_Page",
+		  });
+		}					  
+						  					  
+  
+
+  // Navigation Events
+	if (link) {
+  const href = link.href;
+
+  if (href.includes("/product-category/")) {
+    const url = new URL(href);
+    const segments = url.pathname.split("/").filter(Boolean);
+
+    // Find the segment after "product-category"
+    const idx = segments.indexOf("product-category");
+    let rawCategory = "N/A";
+
+    if (idx !== -1 && segments[idx + 1]) {
+      rawCategory = segments[idx + 1];
+    }
+
+    const categoryName = decodeURIComponent(rawCategory);
+
+    trackEvent("Category_Viewed", {
+      category_name: categoryName,
+      source: "Main_Navigation",
+      page_name: "Category Page",
+    });
+  }
+}
+		
+//   if (link) {
+//     let href = link.href;
+
+// 		if (href.includes("/product-category/")) {
+//       const rawCategory = new URL(href).pathname.split("/").filter(Boolean).pop() || "N/A";
+// 	  const categoryName = decodeURIComponent(rawCategory); // ✅ decode Arabic or encoded text	
+//       trackEvent("Category_Viewed", { category_name: categoryName, source: "Main_Navigation", page_name: "Category Page" });
+//     }
+//   }
+});
+
+// ============================================================
+// Login / Signup Tracking (with Identity Push)
+// ============================================================
+document.addEventListener("click", function (e) {
+  // Email Login
+  if (e.target.closest('button[name="login"]')) {
+    const email = document.querySelector('input[name="username"]')?.value;
+    if (email?.includes("@")) {
+      sessionStorage.setItem("clevertap_login_attempt", "Email/Password");
+      sessionStorage.setItem("clevertap_login_email", email);
+      trackEvent("Login", { "Method Used": "Email/Password", "Status": "Attempted" });
+    }
+  }
+
+  // Email Signup
+  if (e.target.closest('button[name="register"]')) {
+    const email = document.querySelector('input[name="email"]')?.value;
+    if (email?.includes("@")) {
+      sessionStorage.setItem("clevertap_signup_attempt", "Email/Password");
+      sessionStorage.setItem("clevertap_signup_email", email);
+      trackEvent("Sign Up", { "Register Option": "Email/Password", "Status": "Attempted" });
+    }
+  }
+
+  // Social Logins
+  let socialBtn = e.target.closest(".nsl-button");
+  if (socialBtn) {
+    let method = socialBtn.classList.contains("nsl-button-google") ? "Google" :
+                 socialBtn.classList.contains("nsl-button-apple") ? "Apple" : "Social";
+    sessionStorage.setItem("clevertap_login_attempt", method);
+    trackEvent("Login", { "Method Used": method, "Status": "Attempted" });
+  }
+});
+
+// Finalize login/signup after redirect
+document.addEventListener("DOMContentLoaded", function () {
+  const finalizeFlow = (type, attemptKey, emailKey, successEvent, failureEvent) => {
+    const method = sessionStorage.getItem(attemptKey);
+    if (method) {
+      const email = sessionStorage.getItem(emailKey);
+      sessionStorage.removeItem(attemptKey);
+      sessionStorage.removeItem(emailKey);
+
+      const success = document.querySelector(".woocommerce-MyAccount-navigation");
+      if (success) {
+        trackEvent(successEvent, { "Method Used": method, "Status": "Success" });
+        if (email) {
+          clevertap.onUserLogin.push({
+            Site: { Identity: email, Email: email, "MSG-email": true, "MSG-push": true, "MSG-sms": true, "MSG-whatsapp": true }
+          });
+        }
+      } else {
+        trackEvent(failureEvent, { "Method Used": method, "Status": "Failure" });
+      }
+    }
+  };
+
+  finalizeFlow("login", "clevertap_login_attempt", "clevertap_login_email", "Login", "Login");
+  finalizeFlow("signup", "clevertap_signup_attempt", "clevertap_signup_email", "Sign Up", "Sign Up");
+});
+
+
+// get location 
+// clevertap.getLocation();
